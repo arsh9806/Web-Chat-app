@@ -5,18 +5,52 @@ import MoreVertIcon from "@material-ui/icons/MoreVert";
 import InsertEmoticonOutlinedIcon from "@material-ui/icons/InsertEmoticonOutlined";
 import MicIcon from "@material-ui/icons/Mic";
 import SearchOutlinedIcon from "@material-ui/icons/SearchOutlined";
+import db from "../firebase";
+import { useParams } from "react-router-dom";
 import "../assets/Chat.css";
+import { useDataLayerValue } from '../StateManagement/StateProvider';
+import firebase from "firebase";
 
 function Chat() {
+
     const [seed, setSeed] = useState('');
     const [input, setInput] = useState("");
+    const [roomName, setRoomName] = useState("");
+    const [messages, setMessages] = useState([]);
+    const { roomId } = useParams();
+    const [{ user }, dispatch] = useDataLayerValue();
+
+
+    useEffect(() => {
+        if (roomId) {
+            db.collection('rooms').doc(roomId).onSnapshot(snap => {
+                setRoomName(snap.data().name)
+            });
+            db.collection(`rooms/${roomId}/messages`).orderBy('timestamp', 'asc')
+                .onSnapshot(snapshot => {
+                    setMessages(snapshot.docs.map(doc => doc.data()))
+                });
+        }
+
+    }, [roomId]);
+
+
     useEffect(() => {
         setSeed(Math.floor(Math.random() * 5000));
+        setRoomName()
     }, [])
+
 
     function sendMessage(e) {
         e.preventDefault();
         console.log(input);
+        db.collection(`rooms/${roomId}/messages`)
+        .add({
+            name: user.displayName,
+            message: input,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        setInput("");
     }
 
     return (
@@ -24,8 +58,8 @@ function Chat() {
             <div className="chat__header">
                 <Avatar src={`https://avatars.dicebear.com/api/human/${seed}.svg`} />
                 <div className="chat__headerInfo">
-                    <h3>Room name</h3>
-                    <p>last seen at</p>
+                    <h3>{roomName}</h3>
+                    <p>Last Active {new Date(messages[messages.length - 1]?.timestamp?.toDate()).toUTCString()}</p>
                 </div>
                 <div className="chat__headerRight">
                     <IconButton>
@@ -40,28 +74,31 @@ function Chat() {
                 </div>
             </div>
             <div className="chat__body">
-                <p className={`chat__message ${
-              true && "chat__reciever"
-            }`}> 
-                <span className="chat__name">Arsh</span>
-                Hello you
-                <span className="chat__timestamp">5:45</span>
-                </p>
+                {
+                    messages.map(message => (
+                        <p className={`chat__message ${message.name === user.displayName && "chat__reciever"
+                            }`}>
+                            <span className="chat__name">{message.name}</span>
+                            {message.message}
+                            <span className="chat__timestamp">{new Date(message.timestamp?.toDate()).toUTCString()}</span>
+                        </p>
+                    ))
+                }
             </div>
             <div className="chat__footer">
-            <InsertEmoticonOutlinedIcon />
-        <form>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            type="text"
-            placeholder="Type a message"
-          />
-          <button onClick={sendMessage} type="submit">
-            Send a Message
+                <InsertEmoticonOutlinedIcon />
+                <form>
+                    <input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        type="text"
+                        placeholder="Type a message"
+                    />
+                    <button onClick={sendMessage} type="submit">
+                        Send a Message
           </button>
-        </form>
-        <MicIcon />
+                </form>
+                <MicIcon />
             </div>
         </div>
     )
