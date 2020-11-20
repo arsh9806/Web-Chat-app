@@ -37,19 +37,21 @@ function Chat() {
 
     useEffect(() => {
         setSeed(Math.floor(Math.random() * 5000));
-        setRoomName()
     }, [])
 
 
     function sendMessage(e) {
         e.preventDefault();
-        console.log(input);
         db.collection(`rooms/${roomId}/messages`)
-        .add({
-            name: user.displayName,
-            message: input,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
+            .add({
+                name: user.displayName,
+                message: input,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(res => {
+                
+            }).catch(err => {
+                alert(err.message)
+            })
         setInput("");
     }
 
@@ -59,7 +61,7 @@ function Chat() {
                 <Avatar src={`https://avatars.dicebear.com/api/human/${seed}.svg`} />
                 <div className="chat__headerInfo">
                     <h3>{roomName}</h3>
-                    <p>Last Active {new Date(messages[messages.length - 1]?.timestamp?.toDate()).toUTCString()}</p>
+                    <p>Last Active {messages[messages.length - 1] ? new Date(messages[messages.length - 1]?.timestamp?.toDate()).toUTCString() : '-'}</p>
                 </div>
                 <div className="chat__headerRight">
                     <IconButton>
@@ -75,8 +77,8 @@ function Chat() {
             </div>
             <div className="chat__body">
                 {
-                    messages.map(message => (
-                        <p className={`chat__message ${message.name === user.displayName && "chat__reciever"
+                    messages.map((message, index) => (
+                        <p key={index} className={`chat__message ${message.name === user.displayName && "chat__reciever"
                             }`}>
                             <span className="chat__name">{message.name}</span>
                             {message.message}

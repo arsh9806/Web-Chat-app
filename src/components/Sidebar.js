@@ -1,4 +1,5 @@
 import React,{ useEffect, useState }  from 'react';
+import { useHistory } from "react-router-dom";
 import SidebarChat from "./SidebarChat";
 import { Avatar, IconButton } from "@material-ui/core";
 import ChatIcon from "@material-ui/icons/Chat";
@@ -12,15 +13,19 @@ import { useDataLayerValue } from '../StateManagement/StateProvider';
 function Sidebar() {
     const [rooms, setRooms] = useState([]);
     const [{ user }, dispatch] = useDataLayerValue();
+    const history = useHistory();
     useEffect(() => {
-        const unsubscribe = db.collection("rooms").onSnapshot((snapshot) =>
+        const unsubscribe = db.collection("rooms").onSnapshot((snapshot) =>{
+
             setRooms(
                 snapshot.docs.map((doc) => ({
                     id: doc.id,
                     data: doc.data(),
                 }))
             )
-        );
+            console.log(snapshot.docs[0].id);
+            history.push(`/rooms/${snapshot.docs[0].id}`)
+        });
 
         return () => {
             unsubscribe();

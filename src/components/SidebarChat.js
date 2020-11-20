@@ -12,7 +12,7 @@ function SidebarChat({ addNewChat, name, id}) {
 
     useEffect(() => {
         db.collection(`rooms/${id}/messages`)
-        .orderBy('timestamp','asc')
+        .orderBy('timestamp','desc')
         .onSnapshot(snap => {
             setMessages(snap.docs.map(message => message.data()))
         })
